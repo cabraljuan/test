@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de la Viborita</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    canvas {
+      background-color: #222;
+      display: block;
+      margin-top: 20px;
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Juego de la Viborita</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  
+  <script>
+    // Obtener el canvas y su contexto
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Configuraciones del juego
+    const canvasSize = 400;
+    const blockSize = 20; // Tamaño de cada bloque
+    const widthInBlocks = canvasSize / blockSize;
+    const heightInBlocks = canvasSize / blockSize;
+
+    // Estado del juego
+    let snake = [{ x: 8, y: 8 }]; // La cabeza de la serpiente inicia en el centro
+    let direction = { x: 0, y: 0 }; // No se mueve hasta que se pulse una tecla
+    let food = { x: 0, y: 0 };
+    let gameInterval = null;
+
+    // Función para colocar la comida en una posición aleatoria
+    function placeFood() {
+      food.x = Math.floor(Math.random() * widthInBlocks);
+      food.y = Math.floor(Math.random() * heightInBlocks);
+      // Verificar que la comida no caiga sobre la serpiente
+      snake.forEach(segment => {
+        if (segment.x === food.x && segment.y === food.y) {
+          placeFood();
+        }
+      });
+    }
+
+    // Función para dibujar un bloque en la cuadrícula
+    function drawBlock(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+    }
+
+    // Dibujar la serpiente (la cabeza se dibuja de otro color)
+    function drawSnake() {
+      snake.forEach((segment, index) => {
+        drawBlock(segment.x, segment.y, index === 0 ? 'lightgreen' : 'green');
+      });
+    }
+
+    // Dibujar la comida
+    function drawFood() {
+      drawBlock(food.x, food.y, 'red');
+    }
+
+    // Limpiar el canvas
+    function clearCanvas() {
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Actualizar la posición de la serpiente y manejar colisiones
+    function update() {
+      // Calcular la nueva posición de la cabeza
+      const newHead = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      // Colisión con las paredes
+      if (
+        newHead.x < 0 || newHead.x >= widthInBlocks ||
+        newHead.y < 0 || newHead.y >= heightInBlocks
+      ) {
+        gameOver();
+        return;
+      }
+
+      // Colisión consigo misma
+      for (let i = 0; i < snake.length; i++) {
+        if (newHead.x === snake[i].x && newHead.y === snake[i].y) {
+          gameOver();
+          return;
+        }
+      }
+
+      // Insertar la nueva cabeza al inicio del arreglo
+      snake.unshift(newHead);
+
+      // Verificar si se ha comido la comida
+      if (newHead.x === food.x && newHead.y === food.y) {
+        placeFood();
+      } else {
+        // Eliminar la última parte de la serpiente si no se come la comida
+        snake.pop();
+      }
+    }
+
+    // Dibujar el estado actual del juego
+    function draw() {
+      clearCanvas();
+      drawSnake();
+      drawFood();
+    }
+
+    // Bucle principal del juego
+    function gameLoop() {
+      update();
+      draw();
+    }
+
+    // Manejar eventos del teclado para cambiar la dirección
+    document.addEventListener("keydown", (event) => {
+      switch (event.key) {
+        case "ArrowUp":
+          if (direction.y === 1) break; // Evita moverse en dirección contraria
+          direction = { x: 0, y: -1 };
+          break;
+        case "ArrowDown":
+          if (direction.y === -1) break;
+          direction = { x: 0, y: 1 };
+          break;
+        case "ArrowLeft":
+          if (direction.x === 1) break;
+          direction = { x: -1, y: 0 };
+          break;
+        case "ArrowRight":
+          if (direction.x === -1) break;
+          direction = { x: 1, y: 0 };
+          break;
+      }
+    });
+
+    // Función para finalizar el juego
+    function gameOver() {
+      clearInterval(gameInterval);
+      alert("¡Fin del juego! Puntaje: " + (snake.length - 1));
+      // Reiniciar el juego
+      snake = [{ x: 8, y: 8 }];
+      direction = { x: 0, y: 0 };
+      placeFood();
+      gameInterval = setInterval(gameLoop, 100);
+    }
+
+    // Iniciar el juego
+    placeFood();
+    gameInterval = setInterval(gameLoop, 100);
+  </script>
+</body>
+</html>
